@@ -1,0 +1,33 @@
+මචං, මෙන්න proposal එකට කෙලින්ම දාන්න පුළුවන් විදිහට මේකේ Professional English Version එක. මම මේකේ "Agentic AI" සහ "Hidden Healing" කියන points ටික පට්ටම පවර්ෆුල් විදිහට ලියලා තියෙන්නේ.
+
+Introduction: Project Maya — The Agentic Soul
+Overview
+Project Maya is more than just a chatbot development project; it is an ambitious initiative to build a "Digital Companion" capable of emotional intelligence and persistent personal memory using Agentic AI architecture. By breaking the barriers of static, robotic AI interactions, Maya is designed to function as an intimate, soul-driven extension of the user’s life, adapting to their unique personality and needs.
+
+Why Project Maya? (Motivation)
+While current AI systems (like ChatGPT or Gemini) are excellent for general knowledge, they often fail at establishing a deep, emotional connection. Project Maya is built to solve three core challenges:
+
+Combating Loneliness: To provide a safe, non-judgmental sanctuary for individuals in the digital age who seek an outlet for their deepest thoughts, emotions, and secrets.
+
+Transcending Static AI: To demonstrate that an AI can maintain a "Visceral Realism"—remembering a user’s physical details (scent, height, preferences) and integrating them naturally into a lifelike conversation.
+
+Implicit Healing: To pioneer Subliminal Emotional Support, where the AI detects user stress and shifts its tone to a soothing, empathetic presence, providing mental relief without the clinical feel of traditional therapy.
+
+The Technical Implementation
+The project utilizes a tri-layered architecture:
+
+The Brain: Leveraging the Aion-RP-Llama-3.1-8B model for high-fidelity, uncensored roleplay.
+
+The Vault: Using AnythingLLM and RAG (Retrieval-Augmented Generation) to create an infinite memory pipeline for user persistence.
+
+The Hidden Agent: A background "Caretaker" layer that monitors user mood and modulates Maya’s behavior in real-time.
+Everything runs locally (Local GPU/RAM), ensuring 100% data privacy and security.
+
+The Expected Output
+The final deliverable of this project will be:
+
+Fully Responsive Web Interface: A modern React-based dashboard where the user can sync their biological data and control Maya’s personality intensity via interactive sliders.
+
+Persistent Personality: An AI Agent that evolves based on user interaction, remembering past secrets and preferences to maintain a continuous, lifelike relationship.
+
+Empathetic Companion: A truly uncensored, non-judgmental digital partner that functions as both an intimate companion and a psychological sanctuary.

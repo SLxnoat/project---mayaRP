@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(xxd \"d:/AI_Projects/project - mayaRP/node_modules/referances.txt\")",
+      "Bash(rm:*)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

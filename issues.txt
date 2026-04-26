@@ -1,0 +1,180 @@
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+react-dom.development.js:18704 The above error occurred in the <HiddenAgentProvider> component:
+
+    at HiddenAgentProvider (http://localhost:3001/src/context/HiddenAgentContext.jsx:67:39)
+    at VaultProvider (http://localhost:3001/src/context/VaultContext.jsx:53:33)
+    at UserProvider (http://localhost:3001/src/context/UserContext.jsx:89:32)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom.development.js:18704
+react-dom.development.js:26962 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+    at renderRootSync (react-dom.development.js:26473:7)
+    at recoverFromConcurrentError (react-dom.development.js:25889:20)
+
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+react-dom.development.js:18704 The above error occurred in the <HiddenAgentProvider> component:
+
+    at HiddenAgentProvider (http://localhost:3001/src/context/HiddenAgentContext.jsx:67:39)
+    at VaultProvider (http://localhost:3001/src/context/VaultContext.jsx:53:33)
+    at UserProvider (http://localhost:3001/src/context/UserContext.jsx:89:32)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom.development.js:18704
+react-dom.development.js:26962 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+    at renderRootSync (react-dom.development.js:26473:7)
+    at recoverFromConcurrentError (react-dom.development.js:25889:20)
+
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+react-dom.development.js:18704 The above error occurred in the <HiddenAgentProvider> component:
+
+    at HiddenAgentProvider (http://localhost:3001/src/context/HiddenAgentContext.jsx:67:39)
+    at VaultProvider (http://localhost:3001/src/context/VaultContext.jsx:53:33)
+    at UserProvider (http://localhost:3001/src/context/UserContext.jsx:89:32)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom.development.js:18704
+react-dom.development.js:26962 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+    at renderRootSync (react-dom.development.js:26473:7)
+    at recoverFromConcurrentError (react-dom.development.js:25889:20)
+
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+ChatContext.jsx:190 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)
+    at beginWork$1 (react-dom.development.js:27490:7)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+react-dom.development.js:18704 The above error occurred in the <HiddenAgentProvider> component:
+
+    at HiddenAgentProvider (http://localhost:3001/src/context/HiddenAgentContext.jsx:67:39)
+    at VaultProvider (http://localhost:3001/src/context/VaultContext.jsx:53:33)
+    at UserProvider (http://localhost:3001/src/context/UserContext.jsx:89:32)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom.development.js:18704
+react-dom.development.js:26962 Uncaught Error: useChat must be used within a ChatProvider
+    at useChat (ChatContext.jsx:190:11)
+    at HiddenAgentProvider (HiddenAgentContext.jsx:54:32)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)
+    at renderRootSync (react-dom.development.js:26473:7)
+    at recoverFromConcurrentError (react-dom.development.js:25889:20)
+
