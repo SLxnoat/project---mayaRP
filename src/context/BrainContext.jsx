@@ -3,10 +3,13 @@ import { chatCompletion, checkAiConnection } from '../services/aiService';
 import { useChat } from './ChatContext';
 import { useVault } from './VaultContext';
 import { useHiddenAgent } from './HiddenAgentContext';
+import { useUser } from './UserContext';
 
 const BrainContext = createContext();
+// Central brain context for AI logic
 
 const initialState = {
+  version: '2.0.1',
   isConnecting: false,
   isConnected: false,
   error: null,
