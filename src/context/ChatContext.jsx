@@ -70,7 +70,7 @@ function chatReducer(state, action) {
     case 'SET_SPEECH_PLAYED':
       return {
         ...state,
-        messages: state.messages.map((msg, idx)) =>
+        messages: state.messages.map((msg, idx) =>
           idx === state.messages.length - 1 ? { ...msg, speechPlayed: true } : msg
         ),
       };
