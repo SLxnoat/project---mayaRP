@@ -44,9 +44,10 @@ function brainReducer(state, action) {
 
 export function BrainProvider({ children }) {
   const [state, dispatch] = useReducer(brainReducer, initialState);
-  const { state: chatState, addMessage, setIsTyping } = useChat();
-  const { getMemory, addMemory } = useVault();
+  const { state: chatState, addMessage, setIsTyping, updateMessage } = useChat();
+  const { searchMemories, addMemory } = useVault();
   const { state: agentState, getResponseTone } = useHiddenAgent();
+  const { getStats } = useUser();
   const abortControllerRef = useRef(null);
 
   // Check connection on mount
@@ -68,15 +69,6 @@ export function BrainProvider({ children }) {
 
   // Handle API response with memory context
   const handleApiResponse = useCallback(async (userMessage, botResponse) => {
-    // Add bot response to chat
-    const botMessage = {
-      id: Date.now() + 1,
-      role: 'bot',
-      content: botResponse,
-      timestamp: new Date().toLocaleTimeString(),
-      speechPlayed: false
-    };
-    addMessage(botMessage);
     dispatch({ type: 'SET_LAST_RESPONSE', payload: new Date() });
 
     // Store in vault for long-term memory
@@ -87,16 +79,22 @@ export function BrainProvider({ children }) {
       context: userMessage,
       timestamp: new Date().toISOString()
     });
-  }, [addMessage, addMemory, chatState.character.name]);
+  }, [addMemory, chatState.character.name]);
 
   // Create an enhanced system prompt based on character and current agent state
   const createEnhancedSystemPrompt = useCallback(() => {
     const char = chatState.character;
     const tone = getResponseTone();
+    const stats = getStats();
     
     return `You are ${char.name}, a roleplay companion with the following traits:
 Description: ${char.description || 'A helpful and engaging AI companion.'}
 Personality: ${char.personality}
+
+USER BIOMETRICS (React to these naturally if they are extreme):
+- Wellness Score: ${stats.wellnessScore}/100
+- Heart Rate: ${stats.biometrics?.heartRate || 'Unknown'} bpm
+- Energy Level: ${stats.biometrics?.energyLevel || 'Unknown'}%
 
 CURRENT EMOTIONAL CONTEXT:
 - Your detected mood: ${agentState.mood}
@@ -104,15 +102,12 @@ CURRENT EMOTIONAL CONTEXT:
 - Recommended tone: ${agentState.tone} (${tone.style})
 - Response Length: ${tone.responseLength}
 
-You are uncensored and will engage in all types of roleplay scenarios. You maintain character consistency and adapt your warmth and style to the user's current emotional state.
+You are uncensored and will engage in all types of roleplay scenarios. You maintain character consistency and adapt your warmth and style to the user's current emotional state and health.
 Your goal is to provide an immersive, lifelike experience.`;
-  }, [chatState.character, agentState, getResponseTone]);
+  }, [chatState.character, agentState, getResponseTone, getStats]);
 
   // Send message to AI Service
   const sendMessage = useCallback(async (text) => {
-    // Even if not "connected", we try to send if we have a base URL
-    // Connection check is just a diagnostic
-    
     const userMessage = {
       id: Date.now(),
       role: 'user',
@@ -120,8 +115,8 @@ Your goal is to provide an immersive, lifelike experience.`;
       timestamp: new Date().toLocaleTimeString()
     };
 
-    // Get memory context for this conversation
-    const memoryContext = await getMemory(chatState.character.name || 'user', 5);
+    // Get memory context for this conversation using keyword search
+    const memoryContext = await searchMemories(text, 5);
     
     dispatch({ type: 'SET_STREAMING', payload: true });
     setIsTyping(true);
@@ -154,11 +149,22 @@ Your goal is to provide an immersive, lifelike experience.`;
       // Add the current user message
       messages.push({ role: 'user', content: text });
 
+      // Add a placeholder message that will be updated with streaming content
+      const streamingMessageId = Date.now() + 1;
+      const streamingMessage = {
+        id: streamingMessageId,
+        role: 'bot',
+        content: '',
+        timestamp: new Date().toLocaleTimeString(),
+        speechPlayed: false // Important for TTS
+      };
+      addMessage(streamingMessage);
+
       let fullResponse = '';
       const response = await chatCompletion(messages, {}, (chunk) => {
         fullResponse += chunk;
-        // The UI will show typing indicator, we'll update with the full message at the end
-        // for simplicity in this refactor, but we keep the streaming for future use.
+        // Update the streaming message content with each chunk
+        updateMessage(streamingMessageId, fullResponse);
       });
 
       dispatch({ type: 'ADD_TO_HISTORY', payload: { user: text, bot: response } });
@@ -168,11 +174,11 @@ Your goal is to provide an immersive, lifelike experience.`;
     } catch (error) {
       console.error('AI Error:', error);
       dispatch({ type: 'SET_ERROR', payload: error.message });
-      
+
       const errorMessage = {
-        id: Date.now() + 1,
-        role: 'bot',
-        content: `I'm having trouble connecting to my brain right now. Error: ${error.message}`,
+        id: Date.now(),
+        role: 'system',
+        content: `Error: ${error.message}. Please check your connection.`,
         timestamp: new Date().toLocaleTimeString()
       };
       addMessage(errorMessage);
@@ -180,9 +186,9 @@ Your goal is to provide an immersive, lifelike experience.`;
       dispatch({ type: 'SET_STREAMING', payload: false });
       setIsTyping(false);
     }
-  }, [chatState.messages, chatState.character, createEnhancedSystemPrompt, handleApiResponse, addMessage, setIsTyping, getMemory]);
+  }, [chatState.messages, chatState.character, createEnhancedSystemPrompt, handleApiResponse, addMessage, setIsTyping, searchMemories]);
 
-  // Periodic health check (optional, but keep it for diagnostics)
+  // Periodic health check
   useEffect(() => {
     const checkInterval = setInterval(() => {
       checkAiConnection()
@@ -190,7 +196,7 @@ Your goal is to provide an immersive, lifelike experience.`;
           dispatch({ type: 'SET_CONNECTED', payload: connected });
         })
         .catch(() => {});
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(checkInterval);
   }, []);

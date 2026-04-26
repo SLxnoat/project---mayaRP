@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export function useSpeech() {
   const [speaking, setSpeaking] = useState(false);
@@ -8,6 +8,10 @@ export function useSpeech() {
   const recognitionRef = useRef(null);
   const [voices, setVoices] = useState([]);
   const onSpeechRecognizedRef = useRef(null);
+
+  // Speech queue for handling multiple messages
+  const speechQueue = useRef([]);
+  const isProcessingQueue = useRef(false);
 
   useEffect(() => {
     const synth = window.speechSynthesis;
@@ -69,12 +73,14 @@ export function useSpeech() {
     }
   };
 
-  const speak = (text, settings = {}) => {
-    if (!synthRef.current) return;
-    if (!text) return;
+  // Process the next item in the speech queue
+  const processQueue = useCallback(() => {
+    if (isProcessingQueue.current || speechQueue.current.length === 0 || !synthRef.current) {
+      return;
+    }
 
-    // Cancel any current speech
-    synthRef.current.cancel();
+    isProcessingQueue.current = true;
+    const { text, settings, resolve } = speechQueue.current[0];
 
     const utterance = new SpeechSynthesisUtterance(text);
 
@@ -95,18 +101,42 @@ export function useSpeech() {
     utterance.onstart = () => setSpeaking(true);
     utterance.onend = () => {
       setSpeaking(false);
+      speechQueue.current.shift(); // Remove processed item
+      isProcessingQueue.current = false;
+      processQueue(); // Process next item
+      if (resolve) resolve();
     };
-    utterance.onerror = () => setSpeaking(false);
+    utterance.onerror = () => {
+      setSpeaking(false);
+      speechQueue.current.shift(); // Remove errored item
+      isProcessingQueue.current = false;
+      processQueue(); // Process next item
+      if (resolve) resolve();
+    };
 
     synthRef.current.speak(utterance);
+  }, []);
+
+  const speak = (text, settings = {}) => {
+    if (!synthRef.current) return;
+    if (!text) return;
+
+    return new Promise((resolve) => {
+      speechQueue.current.push({ text, settings, resolve });
+      if (!isProcessingQueue.current && !speaking) {
+        processQueue();
+      }
+    });
   };
 
-  const cancelSpeech = () => {
+  const cancelSpeech = useCallback(() => {
     if (synthRef.current) {
       synthRef.current.cancel();
+      speechQueue.current = [];
+      isProcessingQueue.current = false;
       setSpeaking(false);
     }
-  };
+  }, []);
 
   const setOnSpeechRecognized = (callback) => {
     onSpeechRecognizedRef.current = callback;

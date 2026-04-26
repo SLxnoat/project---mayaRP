@@ -58,10 +58,19 @@ function chatReducer(state, action) {
       return { ...state, messages: [] };
     case 'SET_MESSAGES':
       return { ...state, messages: action.payload };
+    case 'UPDATE_MESSAGE':
+      return {
+        ...state,
+        messages: state.messages.map(msg =>
+          msg.id === action.payload.messageId
+            ? { ...msg, content: action.payload.content }
+            : msg
+        )
+      };
     case 'SET_SPEECH_PLAYED':
       return {
         ...state,
-        messages: state.messages.map((msg, idx) =>
+        messages: state.messages.map((msg, idx)) =>
           idx === state.messages.length - 1 ? { ...msg, speechPlayed: true } : msg
         ),
       };
@@ -119,8 +128,9 @@ export function ChatProvider({ children }) {
         speak(lastMessage.content, {
           speechRate: state.voiceSettings.speechRate,
           speechPitch: state.voiceSettings.speechPitch,
+        }).then(() => {
+          dispatch({ type: 'SET_SPEECH_PLAYED' });
         });
-        dispatch({ type: 'SET_SPEECH_PLAYED' });
       }
     }
   }, [state.messages, state.voiceSettings.enabled, speak]);
@@ -133,6 +143,9 @@ export function ChatProvider({ children }) {
     }, []),
     setIsTyping: useCallback((typing) => {
       dispatch({ type: 'SET_TYPING', payload: typing });
+    }, []),
+    updateMessage: useCallback((messageId, content) => {
+      dispatch({ type: 'UPDATE_MESSAGE', payload: { messageId, content } });
     }, []),
     setCharacter: useCallback((character) => {
       dispatch({ type: 'SET_CHARACTER', payload: character });

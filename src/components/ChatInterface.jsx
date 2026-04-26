@@ -103,10 +103,9 @@ export default function ChatInterface() {
 
   // Get current wellness score from stats
   const stats = getStats?.() || {};
-  const wellnessScore = stats.wellnessScore || 75;
 
   return (
-    <div className="flex h-screen bg-gray-900">
+    <div className="flex h-[100dvh] bg-gray-900">
       {/* Sidebar */}
       <aside className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col overflow-hidden">
         {/* Character Info */}
@@ -178,7 +177,7 @@ export default function ChatInterface() {
             </div>
             <div className="bg-gray-700/50 rounded-lg p-3">
               <div className="text-xs text-gray-400 mb-1">Wellness</div>
-              <div className="text-lg font-semibold text-white">{wellnessScore}%</div>
+              <div className="text-lg font-semibold text-white">{stats.wellnessScore}%</div>
             </div>
           </div>
         </div>
@@ -304,32 +303,34 @@ export default function ChatInterface() {
           {state.messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : msg.role === 'system' ? 'justify-center' : 'justify-start'} animate-slide-up`}
             >
               <div
                 className={`max-w-[70%] p-4 rounded-2xl ${
                   msg.role === 'user'
                     ? 'bg-primary-600 text-white rounded-br-none'
+                    : msg.role === 'system'
+                    ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 rounded-none max-w-full'
                     : 'bg-gray-700 text-gray-100 rounded-bl-none'
                 }`}
               >
                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                <span className="text-xs opacity-50 mt-2 block text-right">
-                  {msg.timestamp}
-                </span>
+                {msg.role !== 'system' && (
+                  <span className="text-xs opacity-50 mt-2 block text-right">
+                    {msg.timestamp}
+                  </span>
+                )}
+                {/* Streaming indicator dots (only for bot messages that are being built) */}
+                {msg.role === 'bot' && brainState.isStreaming && msg.content.length > 0 && (
+                  <div className="flex space-x-1 mt-2">
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
-
-          {isStreaming && (
-            <div className="flex justify-start animate-slide-up">
-              <div className="bg-gray-700 p-4 rounded-2xl rounded-bl-none flex items-center space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </div>
-          )}
 
           <div ref={messagesEndRef} />
         </div>

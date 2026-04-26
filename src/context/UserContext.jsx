@@ -1,4 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { useBiometrics } from '../hooks/useBiometrics';
 
 const UserContext = createContext();
 
@@ -75,6 +76,14 @@ function userReducer(state, action) {
 
 export function UserProvider({ children }) {
   const [state, dispatch] = useReducer(userReducer, initialState);
+  const { biometrics, getWellnessScore, syncBiometrics } = useBiometrics();
+
+  // Sync biometrics on login
+  useEffect(() => {
+    if (state.lastLogin) {
+      syncBiometrics();
+    }
+  }, [state.lastLogin, syncBiometrics]);
 
   // Load user data from localStorage
   useEffect(() => {
@@ -167,9 +176,11 @@ export function UserProvider({ children }) {
       lastLogin: state.lastLogin,
       moodDistribution,
       interestsCount: state.preferences.interests.length,
-      boundariesCount: state.preferences.boundaries.length
+      boundariesCount: state.preferences.boundaries.length,
+      wellnessScore: getWellnessScore(),
+      biometrics: biometrics
     };
-  }, [state.totalMessages, state.lastLogin, state.moodHistory, state.preferences]);
+  }, [state.totalMessages, state.lastLogin, state.moodHistory, state.preferences, getWellnessScore, biometrics]);
 
   // Reset all user data
   const resetData = useCallback(() => {

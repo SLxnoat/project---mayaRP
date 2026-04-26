@@ -100,14 +100,33 @@ export function VaultProvider({ children }) {
     }
   }, [state.memories]);
 
-  // Search memories by keyword
-  const searchMemories = useCallback((query, limit = 10) => {
+  // Search memories by keywords (smarter than simple includes)
+  const searchMemories = useCallback((query, limit = 5) => {
+    if (!query) return [];
+    
     const queryLower = query.toLowerCase();
-    const results = state.memories.filter(
-      m => m.content.toLowerCase().includes(queryLower) ||
-           m.context?.toLowerCase().includes(queryLower)
-    );
-    return results.slice(0, limit);
+    const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3); // Only search for significant words
+    
+    if (queryWords.length === 0) {
+      // If no long words, fallback to simple inclusion for the whole query
+      return state.memories
+        .filter(m => m.content.toLowerCase().includes(queryLower))
+        .slice(0, limit);
+    }
+
+    const scored = state.memories.map(m => {
+      const contentLower = m.content.toLowerCase();
+      let score = 0;
+      queryWords.forEach(word => {
+        if (contentLower.includes(word)) score++;
+      });
+      return { ...m, searchScore: score };
+    });
+
+    return scored
+      .filter(m => m.searchScore > 0)
+      .sort((a, b) => b.searchScore - a.searchScore)
+      .slice(0, limit);
   }, [state.memories]);
 
   // Get memories by type
