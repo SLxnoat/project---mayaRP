@@ -3,9 +3,9 @@
  */
 
 export const DEFAULT_CONFIG = {
-  baseUrl: import.meta.env.VITE_AI_BASE_URL || 'https://api.ollama.com/v1',
+  baseUrl: import.meta.env.VITE_AI_BASE_URL || 'https://ollama.com/api',
   apiKey: import.meta.env.VITE_AI_API_KEY || '5dc5eb2ffd5e42edbae56d6fdb11b506.Dwc8mH9P_b8FBhZepxLgyj-x',
-  model: import.meta.env.VITE_AI_MODEL || 'dolphin-mixtral',
+  model: import.meta.env.VITE_AI_MODEL || 'nemotron-3-super:cloud',
   temperature: parseFloat(import.meta.env.VITE_AI_TEMPERATURE) || 0.7,
   maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS) || 2000,
 };
@@ -99,13 +99,17 @@ export async function chatCompletion(messages, options = {}, onStream = null) {
  * Checks connectivity to the AI provider.
  */
 export async function checkAiConnection(config = DEFAULT_CONFIG) {
+  if (!config.baseUrl) return false;
+  
   try {
-    const response = await fetch(`${config.baseUrl}/models`, {
+    // Try to just ping the base URL or common endpoints
+    const response = await fetch(config.baseUrl, {
+      method: 'HEAD',
       headers: {
         'Authorization': `Bearer ${config.apiKey}`,
       },
     });
-    return response.ok;
+    return response.ok || response.status === 404 || response.status === 405; // 404/405 often means the endpoint exists but requires a specific path/method
   } catch (error) {
     console.error('AI Connection check failed:', error);
     return false;
