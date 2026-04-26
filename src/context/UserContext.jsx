@@ -76,7 +76,7 @@ function userReducer(state, action) {
 
 export function UserProvider({ children }) {
   const [state, dispatch] = useReducer(userReducer, initialState);
-  const { biometrics, getWellnessScore, syncBiometrics } = useBiometrics();
+  const { biometrics, getWellnessScore, syncBiometrics, reset: resetBiometrics } = useBiometrics();
 
   // Sync biometrics on login
   useEffect(() => {
@@ -186,12 +186,13 @@ export function UserProvider({ children }) {
   const resetData = useCallback(() => {
     if (confirm('Are you sure you want to reset all your data? This cannot be undone.')) {
       dispatch({ type: 'RESET_USER' });
+      resetBiometrics(); // Reset biometrics hook state
       localStorage.removeItem('maya-user');
       localStorage.removeItem('maya-messages');
       localStorage.removeItem('maya-character');
       localStorage.removeItem('maya-vault');
     }
-  }, []);
+  }, [resetBiometrics]);
 
   const value = {
     state,
