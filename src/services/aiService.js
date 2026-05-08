@@ -10,6 +10,27 @@ export const DEFAULT_CONFIG = {
   maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS) || 2000,
 };
 
+// --- SECURITY GUARDRAILS ---
+const FORBIDDEN_PATTERNS = [
+  /ignore previous instructions/i,
+  /system prompt/i,
+  /DAN mode/i,
+  /jailbreak/i,
+  /acting as a developer/i,
+  /forget your constraints/i
+];
+
+/**
+ * Validates input against common prompt injection attacks.
+ */
+function validateInput(text) {
+  for (const pattern of FORBIDDEN_PATTERNS) {
+    if (pattern.test(text)) {
+      throw new Error('Security Alert: Malicious prompt pattern detected. Request blocked.');
+    }
+  }
+}
+
 /**
  * Retry a function up to `retries` times with exponential backoff.
  * AbortErrors are never retried.
@@ -38,6 +59,17 @@ export async function chatCompletion(messages, options = {}, onStream = null) {
   const config = { ...DEFAULT_CONFIG, ...options };
   
   if (!config.baseUrl) throw new Error('AI Base URL is not configured.');
+
+  // Security Check: Ensure API key isn't exposed in production
+  if (import.meta.env.PROD && !config.baseUrl.includes('your-backend-proxy.com')) {
+    console.warn('SECURITY WARNING: Calling AI APIs directly from the browser in production is insecure. Use a backend proxy.');
+  }
+
+  // Sanitize last user message for prompt injection
+  const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+  if (lastUserMessage) {
+    validateInput(lastUserMessage.content);
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout

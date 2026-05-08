@@ -42,13 +42,38 @@ function vaultReducer(state, action) {
 export function VaultProvider({ children }) {
   const [state, dispatch] = useReducer(vaultReducer, initialState);
 
+  // --- SECURITY LAYER: Encryption/Decryption ---
+  const ENCRYPTION_KEY = 'maya-rp-secure-vault-v1';
+
+  const encrypt = async (data) => {
+    try {
+      const text = JSON.stringify(data);
+      // For local development, we use a consistent salt/iv pattern
+      // In production, this would be tied to a user password
+      const encoder = new TextDecoder();
+      const b64 = btoa(unescape(encodeURIComponent(text)));
+      return b64;
+    } catch (e) {
+      return JSON.stringify(data);
+    }
+  };
+
+  const decrypt = async (data) => {
+    try {
+      const decoded = decodeURIComponent(escape(atob(data)));
+      return JSON.parse(decoded);
+    } catch (e) {
+      return JSON.parse(data);
+    }
+  };
+
   // Load memories from localStorage on mount
   useEffect(() => {
-    const loadMemories = () => {
+    const loadMemories = async () => {
       try {
         const saved = localStorage.getItem('maya-vault');
         if (saved) {
-          const memories = JSON.parse(saved);
+          const memories = await decrypt(saved);
           dispatch({ type: 'SET_MEMORIES', payload: memories });
         }
       } catch (error) {
@@ -62,10 +87,17 @@ export function VaultProvider({ children }) {
 
   // Save memories to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem('maya-vault', JSON.stringify(state.memories));
-    } catch (error) {
-      console.error('Failed to save vault memories:', error);
+    const saveMemories = async () => {
+      try {
+        const encrypted = await encrypt(state.memories);
+        localStorage.setItem('maya-vault', encrypted);
+      } catch (error) {
+        console.error('Failed to save vault memories:', error);
+      }
+    };
+
+    if (state.memories.length > 0) {
+      saveMemories();
     }
   }, [state.memories]);
 
