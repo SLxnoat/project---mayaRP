@@ -1,6 +1,7 @@
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { useChat } from './ChatContext';
 import { analyzeText } from '../services/sentimentService';
+import { performDeepAnalysis } from '../services/aiService';
 
 const HiddenAgentContext = createContext();
 
@@ -13,7 +14,9 @@ const initialState = {
   active: true,
   moodHistory: [],
   detectedEmotions: [],
-  distortions: [], // NEW: Cognitive distortions tracked
+  distortions: [],
+  deepProfile: null, // NEW: High-fidelity LLM analysis
+  isAnalyzing: false,
   lastMoodCheck: null
 };
 
@@ -38,8 +41,10 @@ function agentReducer(state, action) {
         ...state,
         moodHistory: [action.payload, ...state.moodHistory].slice(0, 100)
       };
-    case 'SET_DETECTED_EMOTIONS':
-      return { ...state, detectedEmotions: action.payload };
+    case 'SET_DEEP_PROFILE':
+      return { ...state, deepProfile: action.payload, isAnalyzing: false };
+    case 'SET_ANALYZING':
+      return { ...state, isAnalyzing: action.payload };
     case 'RESET_AGENT':
       return { ...initialState, active: state.active };
     default:
@@ -51,10 +56,28 @@ export function HiddenAgentProvider({ children }) {
   const [state, dispatch] = useReducer(agentReducer, initialState);
   const { state: chatState } = useChat();
 
+  // Deep agentic analysis using LLM (asynchronous)
+  const runDeepAnalysis = useCallback(async (text, context) => {
+    dispatch({ type: 'SET_ANALYZING', payload: true });
+    const profile = await performDeepAnalysis(text, context);
+    if (profile) {
+      dispatch({ type: 'SET_DEEP_PROFILE', payload: profile });
+      
+      // If LLM detects extreme stress or hidden needs, override the heuristic tone
+      if (profile.stressLevel > 80 || profile.primaryEmotion === 'fear') {
+        dispatch({ type: 'SET_TONE', payload: 'soothing' });
+        dispatch({ type: 'SET_EMPATHY_LEVEL', payload: 100 });
+      }
+    } else {
+      dispatch({ type: 'SET_ANALYZING', payload: false });
+    }
+  }, []);
+
   // Analyze text and detect mood using the shared service
   const runAnalysis = useCallback((text) => {
     if (!text) return;
     
+    // 1. Immediate Heuristic Analysis (Fast)
     const analysis = analyzeText(text);
 
     dispatch({ type: 'SET_MOOD', payload: analysis.mood });
@@ -71,7 +94,6 @@ export function HiddenAgentProvider({ children }) {
     } });
 
     // ML-inspired Dynamic Empathy & Tone Scaling
-    // Empathy increases with stress and detected cognitive distortions
     const distortionMultiplier = 1 + (analysis.distortions.length * 0.2);
     let targetEmpathy = 50;
 
@@ -91,8 +113,13 @@ export function HiddenAgentProvider({ children }) {
 
     dispatch({ type: 'SET_EMPATHY_LEVEL', payload: targetEmpathy });
 
+    // 2. Trigger Deep Agentic Analysis (LLM - Background)
+    // We pass the last few messages for context
+    const context = chatState.messages.slice(-5).map(m => m.content);
+    runDeepAnalysis(text, context);
+
     return analysis;
-  }, [state.empathyLevel]);
+  }, [state.empathyLevel, chatState.messages, runDeepAnalysis]);
 
   // Get adjusted response tone
   const getResponseTone = useCallback(() => {
@@ -119,8 +146,19 @@ export function HiddenAgentProvider({ children }) {
       }
     };
 
-    return toneSettings[state.tone] || toneSettings.balanced;
-  }, [state.tone]);
+    const baseTone = toneSettings[state.tone] || toneSettings.balanced;
+    
+    // Inject Deep Profile insights if available
+    if (state.deepProfile) {
+      return {
+        ...baseTone,
+        hiddenNeeds: state.deepProfile.hiddenNeeds,
+        recommendedAction: state.deepProfile.recommendation
+      };
+    }
+
+    return baseTone;
+  }, [state.tone, state.deepProfile]);
 
   // Check mood periodically
   useEffect(() => {

@@ -133,6 +133,45 @@ export async function chatCompletion(messages, options = {}, onStream = null) {
 }
 
 /**
+ * Perform a deep agentic analysis of user text to detect hidden psychological markers.
+ * Used by the Hidden Agent loop.
+ */
+export async function performDeepAnalysis(text, context = []) {
+  const analysisPrompt = `
+    Analyze the following user input from a psychological and emotional perspective.
+    Extract the following metrics in JSON format:
+    - primaryEmotion: (one of: joy, sadness, anger, fear, surprise, neutral)
+    - intensity: (0.0 to 1.0)
+    - stressLevel: (0 to 100)
+    - cognitiveDistortions: (array of detected patterns)
+    - hiddenNeeds: (what the user is actually seeking emotionally)
+    - recommendation: (how a counselor should adapt their tone)
+    
+    User Input: "${text}"
+    Recent Context: ${JSON.stringify(context.slice(-3))}
+    
+    Return ONLY valid JSON.
+  `;
+
+  try {
+    const result = await chatCompletion([
+      { role: 'system', content: 'You are a highly advanced psychological analysis engine. Return only JSON.' },
+      { role: 'user', content: analysisPrompt }
+    ], { temperature: 0.1 }); // Low temperature for consistent JSON
+
+    // Find JSON in the response
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    return null;
+  } catch (error) {
+    console.error('Deep Analysis Error:', error);
+    return null;
+  }
+}
+
+/**
  * Checks connectivity to the AI provider.
  */
 export async function checkAiConnection(config = DEFAULT_CONFIG) {
