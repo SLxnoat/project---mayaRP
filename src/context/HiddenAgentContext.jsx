@@ -5,13 +5,15 @@ import { analyzeText } from '../services/sentimentService';
 const HiddenAgentContext = createContext();
 
 const initialState = {
-  mood: 'neutral', // 'neutral', 'happy', 'sad', 'excited', 'calm', 'stressed'
-  stressLevel: 0, // 0-100
-  empathyLevel: 50, // 0-100, dynamically adjusted
-  tone: 'balanced', // 'balanced', 'soothing', 'playful', 'serious'
+  mood: 'neutral',
+  stressLevel: 0,
+  smoothedStress: 0, // EMA smoothed value
+  empathyLevel: 50,
+  tone: 'balanced',
   active: true,
   moodHistory: [],
   detectedEmotions: [],
+  distortions: [], // NEW: Cognitive distortions tracked
   lastMoodCheck: null
 };
 
@@ -20,7 +22,11 @@ function agentReducer(state, action) {
     case 'SET_MOOD':
       return { ...state, mood: action.payload, lastMoodCheck: new Date() };
     case 'SET_STRESS_LEVEL':
-      return { ...state, stressLevel: action.payload };
+      const alpha = 0.3; // Smoothing factor
+      const newSmoothed = (action.payload * alpha) + (state.smoothedStress * (1 - alpha));
+      return { ...state, stressLevel: action.payload, smoothedStress: newSmoothed };
+    case 'SET_DISTORTIONS':
+      return { ...state, distortions: action.payload };
     case 'SET_EMPATHY_LEVEL':
       return { ...state, empathyLevel: action.payload };
     case 'SET_TONE':
@@ -53,28 +59,37 @@ export function HiddenAgentProvider({ children }) {
 
     dispatch({ type: 'SET_MOOD', payload: analysis.mood });
     dispatch({ type: 'SET_STRESS_LEVEL', payload: analysis.stressLevel });
+    dispatch({ type: 'SET_DISTORTIONS', payload: analysis.distortions });
     dispatch({ type: 'SET_DETECTED_EMOTIONS', payload: analysis.detectedEmotions });
+    
     dispatch({ type: 'ADD_MOOD_HISTORY', payload: { 
       mood: analysis.mood, 
       timestamp: new Date(), 
       stressLevel: analysis.stressLevel,
+      distortions: analysis.distortions,
       score: analysis.emotionalScore
     } });
 
-    // Adjust empathy and tone based on stress level and mood
-    if (analysis.stressLevel > 60) {
-      dispatch({ type: 'SET_EMPATHY_LEVEL', payload: Math.min(100, state.empathyLevel + 20) });
+    // ML-inspired Dynamic Empathy & Tone Scaling
+    // Empathy increases with stress and detected cognitive distortions
+    const distortionMultiplier = 1 + (analysis.distortions.length * 0.2);
+    let targetEmpathy = 50;
+
+    if (analysis.stressLevel > 60 || analysis.distortions.length > 0) {
+      targetEmpathy = Math.min(100, (state.empathyLevel + 25) * distortionMultiplier);
       dispatch({ type: 'SET_TONE', payload: 'soothing' });
-    } else if (analysis.stressLevel < 30 && analysis.mood === 'happy') {
-      dispatch({ type: 'SET_EMPATHY_LEVEL', payload: Math.max(0, state.empathyLevel - 10) });
+    } else if (analysis.mood === 'happy') {
+      targetEmpathy = Math.max(20, state.empathyLevel - 15);
       dispatch({ type: 'SET_TONE', payload: 'playful' });
     } else if (analysis.mood === 'sad') {
-      dispatch({ type: 'SET_EMPATHY_LEVEL', payload: Math.min(100, state.empathyLevel + 10) });
+      targetEmpathy = Math.min(90, state.empathyLevel + 15);
       dispatch({ type: 'SET_TONE', payload: 'serious' });
     } else {
-      dispatch({ type: 'SET_EMPATHY_LEVEL', payload: Math.max(30, Math.min(70, state.empathyLevel)) });
+      targetEmpathy = 50;
       dispatch({ type: 'SET_TONE', payload: 'balanced' });
     }
+
+    dispatch({ type: 'SET_EMPATHY_LEVEL', payload: targetEmpathy });
 
     return analysis;
   }, [state.empathyLevel]);
