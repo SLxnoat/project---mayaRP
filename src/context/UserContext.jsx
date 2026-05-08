@@ -52,7 +52,8 @@ function userReducer(state, action) {
         }
       };
     case 'SET_PERSONAL_DATA':
-      return { ...state, personalData: { ...state, ...action.payload } };
+      // BUG-04 fixed: was spreading ...state (root) instead of ...state.personalData
+      return { ...state, personalData: { ...state.personalData, ...action.payload } };
     case 'ADD_BOUNDARY':
       return {
         ...state,

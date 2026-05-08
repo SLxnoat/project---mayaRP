@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { useChat } from '../context/ChatContext';
+import { useChat } from './ChatContext';
 import { analyzeText } from '../services/sentimentService';
 
 const HiddenAgentContext = createContext();

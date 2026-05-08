@@ -3,12 +3,28 @@
  */
 
 export const DEFAULT_CONFIG = {
-  baseUrl: import.meta.env.VITE_AI_BASE_URL || 'https://openrouter.ai/api/v1',
-  apiKey: import.meta.env.VITE_AI_API_KEY || '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',
-  model: import.meta.env.VITE_AI_MODEL || 'mistralai/mistral-nemo',
+  baseUrl: import.meta.env.VITE_AI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai',
+  apiKey: import.meta.env.VITE_AI_API_KEY || '',
+  model: import.meta.env.VITE_AI_MODEL || 'gemini-2.5-flash',
   temperature: parseFloat(import.meta.env.VITE_AI_TEMPERATURE) || 0.7,
   maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS) || 2000,
 };
+
+/**
+ * Retry a function up to `retries` times with exponential backoff.
+ * AbortErrors are never retried.
+ */
+async function withRetry(fn, retries = 2, baseDelay = 1000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const isLast = attempt === retries;
+      if (isLast || error.name === 'AbortError') throw error;
+      await new Promise(r => setTimeout(r, baseDelay * (attempt + 1)));
+    }
+  }
+}
 
 /**
  * Sends a chat completion request to the AI provider.
@@ -27,29 +43,50 @@ export async function chatCompletion(messages, options = {}, onStream = null) {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
-        'HTTP-Referer': window.location.origin, // Required by OpenRouter
-        'X-Title': 'Maya RP', // Required by OpenRouter
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages: messages,
-        temperature: config.temperature,
-        max_tokens: config.maxTokens,
-        stream: !!onStream,
-      }),
-      signal: controller.signal,
-    });
+    const response = await withRetry(() =>
+      fetch(`${config.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: messages,
+          temperature: config.temperature,
+          max_tokens: config.maxTokens,
+          stream: !!onStream,
+        }),
+        signal: controller.signal,
+      })
+    );
 
     clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
+
+      // Gemini returns errors as an array: [{ error: { code, message, details } }]
+      // Standard OpenAI format returns: { error: { message } }
+      const errorObj = Array.isArray(errorData)
+        ? errorData[0]?.error
+        : errorData?.error;
+
+      if (response.status === 429) {
+        // Extract the retry delay from Gemini's RetryInfo detail if present
+        const retryInfo = errorObj?.details?.find(d =>
+          typeof d['@type'] === 'string' && d['@type'].includes('RetryInfo')
+        );
+        const retryDelay = retryInfo?.retryDelay ?? null;
+        const retryMsg = retryDelay ? ` Please retry in ${retryDelay}.` : '';
+        throw new Error(
+          `API quota exceeded (rate limit).${retryMsg} Check your usage at https://ai.dev/rate-limit`
+        );
+      }
+
+      throw new Error(
+        errorObj?.message || `API request failed with status ${response.status}`
+      );
     }
 
     if (onStream) {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import { chatCompletion, checkAiConnection } from '../services/aiService';
 import { useChat } from './ChatContext';
 import { useVault } from './VaultContext';
@@ -51,7 +51,6 @@ export function BrainProvider({ children }) {
   const { searchMemories, addMemory } = useVault();
   const { state: agentState, getResponseTone } = useHiddenAgent();
   const { getStats } = useUser();
-  const abortControllerRef = useRef(null);
 
   // Check connection on mount
   useEffect(() => {

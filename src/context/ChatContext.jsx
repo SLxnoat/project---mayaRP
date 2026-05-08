@@ -19,6 +19,7 @@ const initialState = {
     speechRate: 1,
     speechPitch: 1,
     selectedVoice: null,
+    autoSubmitVoice: true,
   },
   conversationSettings: {
     maxContext: 10,
@@ -83,7 +84,7 @@ export function ChatProvider({ children }) {
   const [state, dispatch] = useReducer(chatReducer, initialState);
   const { speak, cancelSpeech, available: speechAvailable } = useSpeech();
   const { addMemory, getMemory } = useVault();
-  const { incrementMessages, updateMoodHistory } = useUser();
+  // Q-02 fixed: incrementMessages and updateMoodHistory were imported but never used
 
   // Load saved settings
   useEffect(() => {
@@ -128,6 +129,7 @@ export function ChatProvider({ children }) {
         speak(lastMessage.content, {
           speechRate: state.voiceSettings.speechRate,
           speechPitch: state.voiceSettings.speechPitch,
+          selectedVoice: state.voiceSettings.selectedVoice,
         }).then(() => {
           dispatch({ type: 'SET_SPEECH_PLAYED' });
         });
