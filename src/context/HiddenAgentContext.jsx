@@ -1,5 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import { useChat } from './ChatContext';
+import { useVision } from './VisionContext';
 import { analyzeText } from '../services/sentimentService';
 import { performDeepAnalysis } from '../services/aiService';
 
@@ -55,6 +56,7 @@ function agentReducer(state, action) {
 export function HiddenAgentProvider({ children }) {
   const [state, dispatch] = useReducer(agentReducer, initialState);
   const { state: chatState } = useChat();
+  const { currentEmotion: visualEmotion, isActive: isVisionActive } = useVision();
 
   // Deep agentic analysis using LLM (asynchronous)
   const runDeepAnalysis = useCallback(async (text, context) => {
@@ -79,6 +81,21 @@ export function HiddenAgentProvider({ children }) {
     
     // 1. Immediate Heuristic Analysis (Fast)
     const analysis = analyzeText(text);
+
+    // Merge Visual Emotion if available
+    if (isVisionActive && visualEmotion) {
+      analysis.detectedEmotions.push({ mood: visualEmotion, score: 2.0, source: 'vision' });
+      
+      // If visual emotion is negative, boost stress level
+      if (['sad', 'angry', 'fearful'].includes(visualEmotion)) {
+        analysis.stressLevel = Math.min(100, analysis.stressLevel + 15);
+      }
+      
+      // Override mood if visual confidence is high (heuristically)
+      if (visualEmotion !== 'neutral' && analysis.mood === 'neutral') {
+        analysis.mood = visualEmotion;
+      }
+    }
 
     dispatch({ type: 'SET_MOOD', payload: analysis.mood });
     dispatch({ type: 'SET_STRESS_LEVEL', payload: analysis.stressLevel });

@@ -3,8 +3,10 @@ import { useChat } from '../context/ChatContext';
 import { useBrain } from '../context/BrainContext';
 import { useHiddenAgent } from '../context/HiddenAgentContext';
 import { useUser } from '../context/UserContext';
+import { useVision } from '../context/VisionContext';
 import { useSpeech } from '../hooks/useSpeech';
 import VoiceVisualizer from './VoiceVisualizer';
+import VisionIris from './VisionIris';
 
 export default function ChatInterface() {
   // BUG-05 fixed: sendMessage lives in useBrain, not useChat
@@ -106,6 +108,12 @@ export default function ChatInterface() {
     <div className="flex h-[100dvh] bg-slate-950 chat-container overflow-hidden">
       {/* Sidebar */}
       <aside className="w-80 glass-dark border-r border-white/5 flex flex-col overflow-hidden z-20">
+        {/* Neural Vision Section */}
+        <div className="p-4 border-b border-white/5">
+          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Neural Vision</h3>
+          <VisionIris />
+        </div>
+
         {/* Character Info */}
         <div className="p-8 border-b border-white/5">
           <div className="flex flex-col items-center text-center space-y-4">
