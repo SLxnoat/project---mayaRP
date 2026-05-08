@@ -60,7 +60,9 @@ export function BrainProvider({ children }) {
         dispatch({ type: 'SET_CONNECTED', payload: connected });
         dispatch({ type: 'SET_CONNECTING', payload: false });
         if (!connected) {
-          dispatch({ type: 'SET_ERROR', payload: 'AI Service connection failed. Please check your .env configuration.' });
+          dispatch({ type: 'SET_ERROR', payload: 'AI Service connection failed. Verify your VITE_AI_API_KEY and VITE_AI_BASE_URL in .env. Check console for details.' });
+        } else {
+          dispatch({ type: 'SET_ERROR', payload: null });
         }
       })
       .catch(err => {
@@ -202,15 +204,19 @@ Provide a response that is 100% consistent with ${char.name}'s persona while sub
     }
   }, [chatState.messages, chatState.character, createEnhancedSystemPrompt, handleApiResponse, addMessage, setIsTyping, searchMemories]);
 
-  // Periodic health check
+  // Periodic health check - Only if NOT connected or if error exists
   useEffect(() => {
     const checkInterval = setInterval(() => {
+      // Don't ping if already connected to save quota
+      if (state.isConnected && !state.error) return;
+
       checkAiConnection()
         .then(connected => {
           dispatch({ type: 'SET_CONNECTED', payload: connected });
+          if (connected) dispatch({ type: 'SET_ERROR', payload: null });
         })
         .catch(() => {});
-    }, 60000);
+    }, 120000); // Increase to 2 minutes
 
     return () => clearInterval(checkInterval);
   }, []);

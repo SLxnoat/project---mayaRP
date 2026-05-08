@@ -56,9 +56,17 @@ async function withRetry(fn, retries = 2, baseDelay = 1000) {
  * @returns {Promise<string>} - Complete response content
  */
 export async function chatCompletion(messages, options = {}, onStream = null) {
+  // Sanitize config: Strip trailing slashes from baseUrl
   const config = { ...DEFAULT_CONFIG, ...options };
+  if (config.baseUrl) {
+    config.baseUrl = config.baseUrl.replace(/\/+$/, '');
+  }
   
   if (!config.baseUrl) throw new Error('AI Base URL is not configured.');
+  if (!config.apiKey) {
+    console.error('AI Service Error: VITE_AI_API_KEY is missing in .env');
+    throw new Error('AI API Key is missing. Check your .env file.');
+  }
 
   // Security Check: Ensure API key isn't exposed in production
   if (import.meta.env.PROD && !config.baseUrl.includes('your-backend-proxy.com')) {
@@ -204,20 +212,41 @@ export async function performDeepAnalysis(text, context = []) {
 }
 
 /**
- * Checks connectivity to the AI provider.
+ * Checks connectivity to the AI provider by performing a minimal ping.
  */
 export async function checkAiConnection(config = DEFAULT_CONFIG) {
-  if (!config.baseUrl) return false;
+  // Sanitize
+  const sanitizedBaseUrl = (config.baseUrl || '').replace(/\/+$/, '');
+  
+  if (!sanitizedBaseUrl || !config.apiKey) {
+    console.error('AI Service: Configuration missing (BaseURL or API Key)');
+    return false;
+  }
   
   try {
-    const response = await fetch(`${config.baseUrl}/models`, {
+    // Perform a minimal completion request as a "ping"
+    const response = await fetch(`${sanitizedBaseUrl}/chat/completions`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${config.apiKey}`,
       },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: 'user', content: 'ping' }],
+        max_tokens: 1,
+      }),
     });
-    return response.ok;
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('AI Connection check failed:', response.status, errorData);
+      return false;
+    }
+
+    return true;
   } catch (error) {
-    console.error('AI Connection check failed:', error);
+    console.error('AI Connection check failed (Network Error):', error);
     return false;
   }
 }

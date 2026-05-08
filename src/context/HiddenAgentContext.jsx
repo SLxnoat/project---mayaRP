@@ -16,8 +16,9 @@ const initialState = {
   moodHistory: [],
   detectedEmotions: [],
   distortions: [],
-  deepProfile: null, // NEW: High-fidelity LLM analysis
+  deepProfile: null,
   isAnalyzing: false,
+  lastDeepAnalysis: 0, // NEW: Cooldown tracking
   lastMoodCheck: null
 };
 
@@ -43,7 +44,7 @@ function agentReducer(state, action) {
         moodHistory: [action.payload, ...state.moodHistory].slice(0, 100)
       };
     case 'SET_DEEP_PROFILE':
-      return { ...state, deepProfile: action.payload, isAnalyzing: false };
+      return { ...state, deepProfile: action.payload, isAnalyzing: false, lastDeepAnalysis: Date.now() };
     case 'SET_ANALYZING':
       return { ...state, isAnalyzing: action.payload };
     case 'RESET_AGENT':
@@ -131,12 +132,21 @@ export function HiddenAgentProvider({ children }) {
     dispatch({ type: 'SET_EMPATHY_LEVEL', payload: targetEmpathy });
 
     // 2. Trigger Deep Agentic Analysis (LLM - Background)
-    // We pass the last few messages for context
-    const context = chatState.messages.slice(-5).map(m => m.content);
-    runDeepAnalysis(text, context);
+    // QUOTA OPTIMIZATION: Only run if:
+    // a) It's been > 45 seconds since last analysis
+    // b) Message is > 15 characters (meaningful)
+    // c) Local analysis detects stress > 40 OR distortions
+    const timeSinceLast = Date.now() - state.lastDeepAnalysis;
+    const isMeaningful = text.length > 15;
+    const isStressful = analysis.stressLevel > 40 || analysis.distortions.length > 0;
+
+    if (timeSinceLast > 45000 && isMeaningful && isStressful) {
+      const context = chatState.messages.slice(-5).map(m => m.content);
+      runDeepAnalysis(text, context);
+    }
 
     return analysis;
-  }, [state.empathyLevel, chatState.messages, runDeepAnalysis]);
+  }, [state.empathyLevel, state.lastDeepAnalysis, chatState.messages, runDeepAnalysis]);
 
   // Get adjusted response tone
   const getResponseTone = useCallback(() => {
