@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useCallback, useRef }
 import { useChat } from './ChatContext';
 import { useVision } from './VisionContext';
 import { analyzeText } from '../services/sentimentService';
-import { performDeepAnalysis } from '../services/aiService';
+import { performDeepAnalysis, getRateLimitStatus } from '../services/aiService';
 
 const HiddenAgentContext = createContext();
 
@@ -32,6 +32,8 @@ function agentReducer(state, action) {
       return { ...state, stressLevel: action.payload, smoothedStress: newSmoothed };
     case 'SET_DISTORTIONS':
       return { ...state, distortions: action.payload };
+    case 'SET_DETECTED_EMOTIONS':
+      return { ...state, detectedEmotions: action.payload };
     case 'SET_EMPATHY_LEVEL':
       return { ...state, empathyLevel: action.payload };
     case 'SET_TONE':
@@ -139,8 +141,9 @@ export function HiddenAgentProvider({ children }) {
     const timeSinceLast = Date.now() - state.lastDeepAnalysis;
     const isMeaningful = text.length > 15;
     const isStressful = analysis.stressLevel > 40 || analysis.distortions.length > 0;
+    const { isRateLimited } = getRateLimitStatus();
 
-    if (timeSinceLast > 45000 && isMeaningful && isStressful) {
+    if (!isRateLimited && timeSinceLast > 45000 && isMeaningful && isStressful) {
       const context = chatState.messages.slice(-5).map(m => m.content);
       runDeepAnalysis(text, context);
     }
@@ -175,17 +178,13 @@ export function HiddenAgentProvider({ children }) {
 
     const baseTone = toneSettings[state.tone] || toneSettings.balanced;
     
-    // Inject Deep Profile insights if available
-    if (state.deepProfile) {
-      return {
-        ...baseTone,
-        hiddenNeeds: state.deepProfile.hiddenNeeds,
-        recommendedAction: state.deepProfile.recommendation
-      };
-    }
-
-    return baseTone;
-  }, [state.tone, state.deepProfile]);
+    return {
+      ...baseTone,
+      visualEmotion: isVisionActive ? visualEmotion : null, // NEW: Expose visual state
+      hiddenNeeds: state.deepProfile?.hiddenNeeds,
+      recommendedAction: state.deepProfile?.recommendation
+    };
+  }, [state.tone, state.deepProfile, isVisionActive, visualEmotion]);
 
   // Check mood periodically
   useEffect(() => {

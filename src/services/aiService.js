@@ -10,6 +10,18 @@ export const DEFAULT_CONFIG = {
   maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS) || 2000,
 };
 
+// Global rate limit state
+let isRateLimited = false;
+let rateLimitResetTime = 0;
+
+export function getRateLimitStatus() {
+  const now = Date.now();
+  if (isRateLimited && now > rateLimitResetTime) {
+    isRateLimited = false;
+  }
+  return { isRateLimited, remainingTime: Math.max(0, rateLimitResetTime - now) };
+}
+
 // --- SECURITY GUARDRAILS ---
 const FORBIDDEN_PATTERNS = [
   /ignore previous instructions/i,
@@ -41,7 +53,10 @@ async function withRetry(fn, retries = 2, baseDelay = 1000) {
       return await fn();
     } catch (error) {
       const isLast = attempt === retries;
-      if (isLast || error.name === 'AbortError') throw error;
+      // Do not retry on rate limits or aborts
+      if (isLast || error.name === 'AbortError' || error.message.includes('rate limit')) {
+        throw error;
+      }
       await new Promise(r => setTimeout(r, baseDelay * (attempt + 1)));
     }
   }
@@ -56,6 +71,12 @@ async function withRetry(fn, retries = 2, baseDelay = 1000) {
  * @returns {Promise<string>} - Complete response content
  */
 export async function chatCompletion(messages, options = {}, onStream = null) {
+  // Check global rate limit
+  const status = getRateLimitStatus();
+  if (status.isRateLimited) {
+    throw new Error(`AI Service is cooling down. Please wait ${Math.ceil(status.remainingTime / 1000)}s.`);
+  }
+
   // Sanitize config: Strip trailing slashes from baseUrl
   const config = { ...DEFAULT_CONFIG, ...options };
   if (config.baseUrl) {
@@ -113,12 +134,21 @@ export async function chatCompletion(messages, options = {}, onStream = null) {
         : errorData?.error;
 
       if (response.status === 429) {
+        // Set global rate limit
+        isRateLimited = true;
+        rateLimitResetTime = Date.now() + 60000; // Default 60s cooldown
+
         // Extract the retry delay from Gemini's RetryInfo detail if present
         const retryInfo = errorObj?.details?.find(d =>
           typeof d['@type'] === 'string' && d['@type'].includes('RetryInfo')
         );
-        const retryDelay = retryInfo?.retryDelay ?? null;
-        const retryMsg = retryDelay ? ` Please retry in ${retryDelay}.` : '';
+        const retryDelay = retryInfo?.retryDelay ?? '60s';
+        
+        // Update reset time if API provided one
+        const delaySeconds = parseInt(retryDelay) || 60;
+        rateLimitResetTime = Date.now() + (delaySeconds * 1000);
+
+        const retryMsg = ` Please retry in ${retryDelay}.`;
         throw new Error(
           `API quota exceeded (rate limit).${retryMsg} Check your usage at https://ai.dev/rate-limit`
         );
@@ -211,18 +241,30 @@ export async function performDeepAnalysis(text, context = []) {
   }
 }
 
+// Simple lock to prevent multiple simultaneous connection checks
+let isCheckingConnection = false;
+
 /**
  * Checks connectivity to the AI provider by performing a minimal ping.
  */
 export async function checkAiConnection(config = DEFAULT_CONFIG) {
+  if (isCheckingConnection) return false;
+  
   // Sanitize
   const sanitizedBaseUrl = (config.baseUrl || '').replace(/\/+$/, '');
   
+  const status = getRateLimitStatus();
+  if (status.isRateLimited) {
+    console.warn(`AI Service: Connection check skipped (Cooling down for ${Math.ceil(status.remainingTime / 1000)}s)`);
+    return false;
+  }
+
   if (!sanitizedBaseUrl || !config.apiKey) {
     console.error('AI Service: Configuration missing (BaseURL or API Key)');
     return false;
   }
   
+  isCheckingConnection = true;
   try {
     // Perform a minimal completion request as a "ping"
     const response = await fetch(`${sanitizedBaseUrl}/chat/completions`, {
@@ -240,6 +282,13 @@ export async function checkAiConnection(config = DEFAULT_CONFIG) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // If 429, update global rate limit
+      if (response.status === 429) {
+        isRateLimited = true;
+        rateLimitResetTime = Date.now() + 60000;
+      }
+
       console.error('AI Connection check failed:', response.status, errorData);
       return false;
     }
@@ -248,5 +297,7 @@ export async function checkAiConnection(config = DEFAULT_CONFIG) {
   } catch (error) {
     console.error('AI Connection check failed (Network Error):', error);
     return false;
+  } finally {
+    isCheckingConnection = false;
   }
 }

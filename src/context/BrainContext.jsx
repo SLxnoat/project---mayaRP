@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { chatCompletion, checkAiConnection } from '../services/aiService';
+import { chatCompletion, checkAiConnection, getRateLimitStatus } from '../services/aiService';
 import { useChat } from './ChatContext';
 import { useVault } from './VaultContext';
 import { useHiddenAgent } from './HiddenAgentContext';
@@ -16,7 +16,8 @@ const initialState = {
   streaming: false,
   conversationHistory: [],
   lastResponseTime: null,
-  apiStatus: 'unknown' // 'unknown', 'connecting', 'connected', 'error', 'disconnected'
+  rateLimit: { active: false, remainingS: 0 },
+  apiStatus: 'unknown'
 };
 
 function brainReducer(state, action) {
@@ -38,6 +39,8 @@ function brainReducer(state, action) {
       return { ...state, lastResponseTime: action.payload };
     case 'CLEAR_HISTORY':
       return { ...state, conversationHistory: [], error: null };
+    case 'SET_RATE_LIMIT':
+      return { ...state, rateLimit: action.payload };
     case 'UPDATE_STATUS':
       return { ...state, apiStatus: action.payload };
     default:
@@ -107,6 +110,7 @@ You are ${char.name}, a highly sophisticated AI companion. You operate with two 
 - **Biometrics**: Heart Rate: ${stats.biometrics?.heartRate || 'Normal'} bpm | Energy: ${stats.biometrics?.energyLevel || 'Stable'}%
 - **Current Emotional Context**: Detected Mood: ${agentState.mood} | Stress: ${agentState.stressLevel}/100
 - **Communication Tone**: ${agentState.tone} (${tone.style}) | Length: ${tone.responseLength}
+${tone.visualEmotion ? `- **Visual Context**: The user currently appears "${tone.visualEmotion}" to your neural sensors.` : ''}
 
 ${tone.hiddenNeeds ? `### AGENTIC INSIGHTS (CONFIDENTIAL)
 - **Detected Hidden Needs**: ${tone.hiddenNeeds}
@@ -204,11 +208,33 @@ Provide a response that is 100% consistent with ${char.name}'s persona while sub
     }
   }, [chatState.messages, chatState.character, createEnhancedSystemPrompt, handleApiResponse, addMessage, setIsTyping, searchMemories]);
 
-  // Periodic health check - Only if NOT connected or if error exists
+  // Global rate limit monitor
+  useEffect(() => {
+    const monitor = setInterval(() => {
+      const status = getRateLimitStatus();
+      if (status.isRateLimited) {
+        dispatch({ 
+          type: 'SET_RATE_LIMIT', 
+          payload: { active: true, remainingS: Math.ceil(status.remainingTime / 1000) } 
+        });
+        dispatch({ type: 'SET_ERROR', payload: `Rate limit hit. Cooling down: ${Math.ceil(status.remainingTime / 1000)}s` });
+      } else {
+        dispatch({ type: 'SET_RATE_LIMIT', payload: { active: false, remainingS: 0 } });
+        // Clear error only if it was a rate limit error
+        if (state.error?.includes('Rate limit hit')) {
+          dispatch({ type: 'SET_ERROR', payload: null });
+        }
+      }
+    }, 1000);
+    return () => clearInterval(monitor);
+  }, []);
+
+  // Periodic health check
   useEffect(() => {
     const checkInterval = setInterval(() => {
-      // Don't ping if already connected to save quota
-      if (state.isConnected && !state.error) return;
+      // Don't ping if rate limited or already connected
+      const status = getRateLimitStatus();
+      if (status.isRateLimited || (state.isConnected && !state.error)) return;
 
       checkAiConnection()
         .then(connected => {
@@ -216,7 +242,7 @@ Provide a response that is 100% consistent with ${char.name}'s persona while sub
           if (connected) dispatch({ type: 'SET_ERROR', payload: null });
         })
         .catch(() => {});
-    }, 120000); // Increase to 2 minutes
+    }, 120000);
 
     return () => clearInterval(checkInterval);
   }, []);
